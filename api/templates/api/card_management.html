@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarot Card Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .tarot-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .tarot-card img {
+            max-width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .modal-body .form-group {
+            margin-bottom: 1rem;
+        }
+        .catalog-img {
+            width: 50px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .meaning-cell {
+            max-width: 200px;
+            word-wrap: break-word;
+            font-size: 0.9em;
+        }
+        .action-buttons .btn {
+            margin: 0 2px;
+        }
+        .btn-group .btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Tarot Card Management</h1>
+            <div>
+                <button type="button" class="btn btn-outline-secondary me-2" id="catalogBtn" onclick="toggleView()">
+                    <i class="fas fa-list"></i> Card Catalog
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
+                    <i class="fas fa-plus"></i> Add New Card
+                </button>
+            </div>
+        </div>
+
+        <!-- View Toggle Buttons -->
+        <div class="mb-3">
+            <div class="btn-group" role="group" aria-label="View toggle">
+                <button type="button" class="btn btn-outline-primary active" id="gridViewBtn" onclick="showGridView()">
+                    <i class="fas fa-th"></i> Grid View
+                </button>
+                <button type="button" class="btn btn-outline-primary" id="listViewBtn" onclick="showListView()">
+                    <i class="fas fa-list"></i> List View
+                </button>
+            </div>
+        </div>
+        
+        <!-- Grid View -->
+        <div id="cardGrid" class="card-grid">
+            <!-- Cards will be loaded here -->
+        </div>
+
+        <!-- List/Catalog View -->
+        <div id="cardCatalog" class="d-none">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Image</th>
+                            <th>Title</th>
+                            <th>Suite</th>
+                            <th>Number</th>
+                            <th>Element</th>
+                            <th>Astrological Sign</th>
+                            <th>Planet</th>
+                            <th>Upright Meaning</th>
+                            <th>Reversed Meaning</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catalogTableBody">
+                        <!-- Catalog rows will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div class="modal fade" id="addCardModal" tabindex="-1" aria-labelledby="addCardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCardModalLabel">Add New Tarot Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addCardForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="cardTitle" class="form-label">Card Title *</label>
+                                    <input type="text" class="form-control" id="cardTitle" name="title" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="cardSuite" class="form-label">Suite *</label>
+                                    <select class="form-control" id="cardSuite" name="suite" required>
+                                        <option value="">Select Suite</option>
+                                        <option value="cups">Cups</option>
+                                        <option value="wands">Wands</option>
+                                        <option value="swords">Swords</option>
+                                        <option value="pentacles">Pentacles</option>
+                                        <option value="major">Major Arcana</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="cardNumber" class="form-label">Card Number</label>
+                                    <input type="number" class="form-control" id="cardNumber" name="number" min="0" max="21">
+                                    <small class="form-text text-muted">Major Arcana: 0-21, Minor Arcana: 1-14</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="cardImage" class="form-label">Card Image *</label>
+                                    <input type="file" class="form-control" id="cardImage" name="image" accept="image/*" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="uprightMeaning" class="form-label">Upright Meaning *</label>
+                            <textarea class="form-control" id="uprightMeaning" name="upright_meaning" rows="3" required 
+                                placeholder="Describe the meaning when the card is upright..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reversedMeaning" class="form-label">Reversed Meaning *</label>
+                            <textarea class="form-control" id="reversedMeaning" name="reversed_meaning" rows="3" required 
+                                placeholder="Describe the meaning when the card is reversed..."></textarea>
+                        </div>
+                        
+                        <!-- Correspondences Section (Optional) -->
+                        <hr>
+                        <h6 class="text-muted">Correspondences (Optional)</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cardElement" class="form-label">Element</label>
+                                    <select class="form-control" id="cardElement" name="element">
+                                        <option value="">Select Element</option>
+                                        <option value="fire">Fire</option>
+                                        <option value="water">Water</option>
+                                        <option value="air">Air</option>
+                                        <option value="earth">Earth</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="astrologicalSign" class="form-label">Astrological Sign</label>
+                                    <select class="form-control" id="astrologicalSign" name="astrological_sign">
+                                        <option value="">Select Sign</option>
+                                        <option value="aries">Aries</option>
+                                        <option value="taurus">Taurus</option>
+                                        <option value="gemini">Gemini</option>
+                                        <option value="cancer">Cancer</option>
+                                        <option value="leo">Leo</option>
+                                        <option value="virgo">Virgo</option>
+                                        <option value="libra">Libra</option>
+                                        <option value="scorpio">Scorpio</option>
+                                        <option value="sagittarius">Sagittarius</option>
+                                        <option value="capricorn">Capricorn</option>
+                                        <option value="aquarius">Aquarius</option>
+                                        <option value="pisces">Pisces</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cardPlanet" class="form-label">Planet</label>
+                                    <select class="form-control" id="cardPlanet" name="planet">
+                                        <option value="">Select Planet</option>
+                                        <option value="sun">Sun</option>
+                                        <option value="moon">Moon</option>
+                                        <option value="mercury">Mercury</option>
+                                        <option value="venus">Venus</option>
+                                        <option value="mars">Mars</option>
+                                        <option value="jupiter">Jupiter</option>
+                                        <option value="saturn">Saturn</option>
+                                        <option value="uranus">Uranus</option>
+                                        <option value="neptune">Neptune</option>
+                                        <option value="pluto">Pluto</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Card</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Card Modal -->
+    <div class="modal fade" id="editCardModal" tabindex="-1" aria-labelledby="editCardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCardModalLabel">Edit Tarot Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editCardForm" enctype="multipart/form-data">
+                    <input type="hidden" id="editCardId" name="id">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editCardTitle" class="form-label">Card Title *</label>
+                                    <input type="text" class="form-control" id="editCardTitle" name="title" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editCardSuite" class="form-label">Suite *</label>
+                                    <select class="form-control" id="editCardSuite" name="suite" required>
+                                        <option value="cups">Cups</option>
+                                        <option value="wands">Wands</option>
+                                        <option value="swords">Swords</option>
+                                        <option value="pentacles">Pentacles</option>
+                                        <option value="major">Major Arcana</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editCardNumber" class="form-label">Card Number</label>
+                                    <input type="number" class="form-control" id="editCardNumber" name="number" min="0" max="21">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editCardImage" class="form-label">Card Image</label>
+                                    <input type="file" class="form-control" id="editCardImage" name="image" accept="image/*">
+                                    <small class="form-text text-muted">Leave empty to keep current image</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editUprightMeaning" class="form-label">Upright Meaning *</label>
+                            <textarea class="form-control" id="editUprightMeaning" name="upright_meaning" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editReversedMeaning" class="form-label">Reversed Meaning *</label>
+                            <textarea class="form-control" id="editReversedMeaning" name="reversed_meaning" rows="3" required></textarea>
+                        </div>
+                        
+                        <!-- Correspondences Section (Optional) -->
+                        <hr>
+                        <h6 class="text-muted">Correspondences (Optional)</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="editCardElement" class="form-label">Element</label>
+                                    <select class="form-control" id="editCardElement" name="element">
+                                        <option value="">Select Element</option>
+                                        <option value="fire">Fire</option>
+                                        <option value="water">Water</option>
+                                        <option value="air">Air</option>
+                                        <option value="earth">Earth</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="editAstrologicalSign" class="form-label">Astrological Sign</label>
+                                    <select class="form-control" id="editAstrologicalSign" name="astrological_sign">
+                                        <option value="">Select Sign</option>
+                                        <option value="aries">Aries</option>
+                                        <option value="taurus">Taurus</option>
+                                        <option value="gemini">Gemini</option>
+                                        <option value="cancer">Cancer</option>
+                                        <option value="leo">Leo</option>
+                                        <option value="virgo">Virgo</option>
+                                        <option value="libra">Libra</option>
+                                        <option value="scorpio">Scorpio</option>
+                                        <option value="sagittarius">Sagittarius</option>
+                                        <option value="capricorn">Capricorn</option>
+                                        <option value="aquarius">Aquarius</option>
+                                        <option value="pisces">Pisces</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="editCardPlanet" class="form-label">Planet</label>
+                                    <select class="form-control" id="editCardPlanet" name="planet">
+                                        <option value="">Select Planet</option>
+                                        <option value="sun">Sun</option>
+                                        <option value="moon">Moon</option>
+                                        <option value="mercury">Mercury</option>
+                                        <option value="venus">Venus</option>
+                                        <option value="mars">Mars</option>
+                                        <option value="jupiter">Jupiter</option>
+                                        <option value="saturn">Saturn</option>
+                                        <option value="uranus">Uranus</option>
+                                        <option value="neptune">Neptune</option>
+                                        <option value="pluto">Pluto</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Card</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = '/api/cards/';
+
+        // Load all cards on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCards();
+        });
+
+        // Handle add card form submission
+        document.getElementById('addCardForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch(API_BASE, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    // Success
+                    bootstrap.Modal.getInstance(document.getElementById('addCardModal')).hide();
+                    this.reset();
+                    loadCards();
+                    showAlert('Card added successfully!', 'success');
+                } else {
+                    // Error
+                    showAlert('Error adding card: ' + JSON.stringify(data), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error adding card', 'danger');
+            });
+        });
+
+        // Handle edit card form submission
+        document.getElementById('editCardForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const cardId = document.getElementById('editCardId').value;
+            
+            fetch(`${API_BASE}${cardId}/`, {
+                method: 'PATCH',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    // Success
+                    bootstrap.Modal.getInstance(document.getElementById('editCardModal')).hide();
+                    loadCards();
+                    showAlert('Card updated successfully!', 'success');
+                } else {
+                    // Error
+                    showAlert('Error updating card: ' + JSON.stringify(data), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error updating card', 'danger');
+            });
+        });
+
+        function loadCards() {
+            fetch(API_BASE)
+                .then(response => response.json())
+                .then(data => {
+                    const cardGrid = document.getElementById('cardGrid');
+                    const catalogTableBody = document.getElementById('catalogTableBody');
+                    
+                    // Clear both views
+                    cardGrid.innerHTML = '';
+                    catalogTableBody.innerHTML = '';
+                    
+                    // Populate grid view
+                    data.forEach(card => {
+                        const cardElement = createCardElement(card);
+                        cardGrid.appendChild(cardElement);
+                    });
+                    
+                    // Populate catalog view
+                    data.forEach(card => {
+                        const catalogRow = createCatalogRow(card);
+                        catalogTableBody.appendChild(catalogRow);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading cards:', error);
+                    showAlert('Error loading cards', 'danger');
+                });
+        }
+
+        function createCardElement(card) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'tarot-card';
+            
+            const suiteDisplay = {
+                'cups': 'Cups',
+                'wands': 'Wands', 
+                'swords': 'Swords',
+                'pentacles': 'Pentacles',
+                'major': 'Major Arcana'
+            };
+            
+            cardDiv.innerHTML = `
+                <img src="${card.image}" alt="${card.title}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                <h5>${card.title}</h5>
+                <p><strong>${suiteDisplay[card.suite]}</strong>${card.number ? ` - ${card.number}` : ''}</p>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editCard(${card.id})">Edit</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCard(${card.id})">Delete</button>
+                </div>
+                <div class="mt-2">
+                    <small><strong>Upright:</strong> ${card.upright_meaning.substring(0, 100)}...</small><br>
+                    <small><strong>Reversed:</strong> ${card.reversed_meaning.substring(0, 100)}...</small>
+                </div>
+            `;
+            
+            return cardDiv;
+        }
+
+        function createCatalogRow(card) {
+            const row = document.createElement('tr');
+            
+            const suiteDisplay = {
+                'cups': 'Cups',
+                'wands': 'Wands', 
+                'swords': 'Swords',
+                'pentacles': 'Pentacles',
+                'major': 'Major Arcana'
+            };
+            
+            row.innerHTML = `
+                <td><img src="${card.image}" alt="${card.title}" class="catalog-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNzAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='"></td>
+                <td><strong>${card.title}</strong></td>
+                <td><span class="badge bg-secondary">${suiteDisplay[card.suite]}</span></td>
+                <td>${card.number || 'N/A'}</td>
+                <td>${card.element ? card.element.charAt(0).toUpperCase() + card.element.slice(1) : 'N/A'}</td>
+                <td>${card.astrological_sign ? card.astrological_sign.charAt(0).toUpperCase() + card.astrological_sign.slice(1) : 'N/A'}</td>
+                <td>${card.planet ? card.planet.charAt(0).toUpperCase() + card.planet.slice(1) : 'N/A'}</td>
+                <td class="meaning-cell">${card.upright_meaning.substring(0, 100)}${card.upright_meaning.length > 100 ? '...' : ''}</td>
+                <td class="meaning-cell">${card.reversed_meaning.substring(0, 100)}${card.reversed_meaning.length > 100 ? '...' : ''}</td>
+                <td class="action-buttons">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editCard(${card.id})" title="Edit Card">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="viewCard(${card.id})" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCard(${card.id})" title="Delete Card">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        function showGridView() {
+            document.getElementById('cardGrid').classList.remove('d-none');
+            document.getElementById('cardCatalog').classList.add('d-none');
+            document.getElementById('gridViewBtn').classList.add('active');
+            document.getElementById('listViewBtn').classList.remove('active');
+        }
+
+        function showListView() {
+            document.getElementById('cardGrid').classList.add('d-none');
+            document.getElementById('cardCatalog').classList.remove('d-none');
+            document.getElementById('listViewBtn').classList.add('active');
+            document.getElementById('gridViewBtn').classList.remove('active');
+        }
+
+        function toggleView() {
+            if (document.getElementById('cardGrid').classList.contains('d-none')) {
+                showGridView();
+            } else {
+                showListView();
+            }
+        }
+
+        function viewCard(cardId) {
+            fetch(`${API_BASE}${cardId}/`)
+                .then(response => response.json())
+                .then(card => {
+                    const suiteDisplay = {
+                        'cups': 'Cups',
+                        'wands': 'Wands', 
+                        'swords': 'Swords',
+                        'pentacles': 'Pentacles',
+                        'major': 'Major Arcana'
+                    };
+                    
+                    const modalHtml = `
+                        <div class="modal fade" id="viewCardModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">${card.title}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-4 text-center">
+                                                <img src="${card.image}" alt="${card.title}" class="img-fluid" style="max-height: 300px;">
+                                            </div>
+                                            <div class="col-md-8">
+                                                <p><strong>Suite:</strong> ${suiteDisplay[card.suite]}</p>
+                                                <p><strong>Number:</strong> ${card.number || 'N/A'}</p>
+                                                <hr>
+                                                <h6>Upright Meaning:</h6>
+                                                <p>${card.upright_meaning}</p>
+                                                <hr>
+                                                <h6>Reversed Meaning:</h6>
+                                                <p>${card.reversed_meaning}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary" onclick="editCard(${card.id}); bootstrap.Modal.getInstance(document.getElementById('viewCardModal')).hide();">Edit Card</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    const existingModal = document.getElementById('viewCardModal');
+                    if (existingModal) {
+                        existingModal.remove();
+                    }
+                    
+                    // Add modal to body
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    
+                    // Show modal
+                    new bootstrap.Modal(document.getElementById('viewCardModal')).show();
+                    
+                    // Clean up modal when hidden
+                    document.getElementById('viewCardModal').addEventListener('hidden.bs.modal', function () {
+                        this.remove();
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error loading card details', 'danger');
+                });
+        }
+            document.getElementById('listViewBtn').classList.remove('active');
+        }
+
+        function showListView() {
+            document.getElementById('cardGrid').classList.add('d-none');
+            document.getElementById('cardCatalog').classList.remove('d-none');
+            document.getElementById('listViewBtn').classList.add('active');
+            document.getElementById('gridViewBtn').classList.remove('active');
+        }
+
+        function toggleView() {
+            if (document.getElementById('cardGrid').classList.contains('d-none')) {
+                showGridView();
+            } else {
+                showListView();
+            }
+        }
+
+        function viewCard(cardId) {
+            fetch(`${API_BASE}${cardId}/`)
+                .then(response => response.json())
+                .then(card => {
+                    const suiteDisplay = {
+                        'cups': 'Cups',
+                        'wands': 'Wands', 
+                        'swords': 'Swords',
+                        'pentacles': 'Pentacles',
+                        'major': 'Major Arcana'
+                    };
+                    
+                    const modalHtml = `
+                        <div class="modal fade" id="viewCardModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">${card.title}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-4 text-center">
+                                                <img src="${card.image}" alt="${card.title}" class="img-fluid" style="max-height: 300px;">
+                                            </div>
+                                            <div class="col-md-8">
+                                                <p><strong>Suite:</strong> ${suiteDisplay[card.suite]}</p>
+                                                <p><strong>Number:</strong> ${card.number || 'N/A'}</p>
+                                                <hr>
+                                                <h6>Upright Meaning:</h6>
+                                                <p>${card.upright_meaning}</p>
+                                                <hr>
+                                                <h6>Reversed Meaning:</h6>
+                                                <p>${card.reversed_meaning}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary" onclick="editCard(${card.id}); bootstrap.Modal.getInstance(document.getElementById('viewCardModal')).hide();">Edit Card</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    const existingModal = document.getElementById('viewCardModal');
+                    if (existingModal) {
+                        existingModal.remove();
+                    }
+                    
+                    // Add modal to body
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    
+                    // Show modal
+                    new bootstrap.Modal(document.getElementById('viewCardModal')).show();
+                    
+                    // Clean up modal when hidden
+                    document.getElementById('viewCardModal').addEventListener('hidden.bs.modal', function () {
+                        this.remove();
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error loading card details', 'danger');
+                });
+        }
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'tarot-card';
+            
+            const suiteDisplay = {
+                'cups': 'Cups',
+                'wands': 'Wands', 
+                'swords': 'Swords',
+                'pentacles': 'Pentacles',
+                'major': 'Major Arcana'
+            };
+            
+            cardDiv.innerHTML = `
+                <img src="${card.image}" alt="${card.title}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                <h5>${card.title}</h5>
+                <p><strong>${suiteDisplay[card.suite]}</strong>${card.number ? ` - ${card.number}` : ''}</p>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editCard(${card.id})">Edit</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCard(${card.id})">Delete</button>
+                </div>
+                <div class="mt-2">
+                    <small><strong>Upright:</strong> ${card.upright_meaning.substring(0, 100)}...</small><br>
+                    <small><strong>Reversed:</strong> ${card.reversed_meaning.substring(0, 100)}...</small>
+                </div>
+            `;
+            
+            return cardDiv;
+        }
+
+        function editCard(cardId) {
+            fetch(`${API_BASE}${cardId}/`)
+                .then(response => response.json())
+                .then(card => {
+                    document.getElementById('editCardId').value = card.id;
+                    document.getElementById('editCardTitle').value = card.title;
+                    document.getElementById('editCardSuite').value = card.suite;
+                    document.getElementById('editCardNumber').value = card.number || '';
+                    document.getElementById('editUprightMeaning').value = card.upright_meaning;
+                    document.getElementById('editReversedMeaning').value = card.reversed_meaning;
+                    
+                    // Set correspondence fields
+                    document.getElementById('editCardElement').value = card.element || '';
+                    document.getElementById('editAstrologicalSign').value = card.astrological_sign || '';
+                    document.getElementById('editCardPlanet').value = card.planet || '';
+                    
+                    new bootstrap.Modal(document.getElementById('editCardModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error loading card for editing', 'danger');
+                });
+        }
+
+        function deleteCard(cardId) {
+            if (confirm('Are you sure you want to delete this card?')) {
+                fetch(`${API_BASE}${cardId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        loadCards();
+                        showAlert('Card deleted successfully!', 'success');
+                    } else {
+                        showAlert('Error deleting card', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error deleting card', 'danger');
+                });
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Update number field constraints based on suite selection
+        document.getElementById('cardSuite').addEventListener('change', function() {
+            const numberField = document.getElementById('cardNumber');
+            const suite = this.value;
+            
+            if (suite === 'major') {
+                numberField.min = 0;
+                numberField.max = 21;
+            } else if (['cups', 'wands', 'swords', 'pentacles'].includes(suite)) {
+                numberField.min = 1;
+                numberField.max = 14;
+            }
+        });
+
+        document.getElementById('editCardSuite').addEventListener('change', function() {
+            const numberField = document.getElementById('editCardNumber');
+            const suite = this.value;
+            
+            if (suite === 'major') {
+                numberField.min = 0;
+                numberField.max = 21;
+            } else if (['cups', 'wands', 'swords', 'pentacles'].includes(suite)) {
+                numberField.min = 1;
+                numberField.max = 14;
+            }
+        });
+    </script>
+</body>
+</html>
