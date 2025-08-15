@@ -47,7 +47,7 @@ class VerifyEmailView(APIView):
 		code = request.data.get('code')
 		try:
 			user = User.objects.get(username=username)
-			if hasattr(user, 'verification_code') and user.verification_code == code:
+			if user.verification_code == code:
 				user.is_verified = True
 				user.save()
 				return Response({'message': 'Email verified.'})
@@ -55,3 +55,11 @@ class VerifyEmailView(APIView):
 				return Response({'message': 'Invalid verification code.'}, status=status.HTTP_400_BAD_REQUEST)
 		except User.DoesNotExist:
 			return Response({'message': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+class UserStatusView(APIView):
+	def post(self, request):
+		username = request.data.get('username')
+		try:
+			user = User.objects.get(username=username)
+			return Response({'is_verified': user.is_verified})
+		except User.DoesNotExist:
+			return Response({'is_verified': False}, status=status.HTTP_404_NOT_FOUND)
