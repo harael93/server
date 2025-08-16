@@ -1,9 +1,33 @@
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.mail import send_mail
 from django.conf import settings
+
+class ProfileView(APIView):
+	parser_classes = (MultiPartParser, FormParser)
+
+	def get(self, request):
+		username = request.query_params.get('username')
+		try:
+			user = User.objects.get(username=username)
+			serializer = UserSerializer(user)
+			return Response(serializer.data)
+		except User.DoesNotExist:
+			return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+	def put(self, request):
+		username = request.data.get('username')
+		try:
+			user = User.objects.get(username=username)
+			serializer = UserSerializer(user, data=request.data, partial=True)
+			if serializer.is_valid():
+				serializer.save()
+				return Response(serializer.data)
+			return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+		except User.DoesNotExist:
+			return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 from .models import User
 from .serializers import UserSerializer
 from django.contrib.auth import authenticate
